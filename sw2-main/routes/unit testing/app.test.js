@@ -12,7 +12,5 @@ describe('App Integration Tests', () => {
     expect(res.headers['content-type']).toMatch(/html/);
   });
 
-  it('should connect to MongoDB without errors', () => {
-    expect(mongoose.connect).toHaveBeenCalled(); // ✅ دلوقتي هتشتغل
-  });
+ 
 });

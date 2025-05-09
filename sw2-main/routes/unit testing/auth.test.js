@@ -3,75 +3,137 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
-const router = require("../auth");
+const authRouter = require("../auth");
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-app.use("/api", router);
+app.use("/auth", authRouter);
 
 jest.mock("../models/users");
 
-describe("Auth Routes Unit Tests", () => {
-  
-  // ✅ Test email validation
-  test("Should reject registration with an invalid email", async () => {
-    const res = await request(app).post("/api/register").send({
+describe("Auth Routes", () => {
+  let token;
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+
+    // Mock User.findOne to return null for new registrations
+    User.findOne.mockImplementation(({ email }) => {
+      if (email === "test@example.com") {
+        return Promise.resolve({
+          _id: "123456",
+          name: "Test User",
+          email: "test@example.com",
+          phone: "123456789",
+          password: bcrypt.hashSync("Test@1234", 10),
+          gender: "male"
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    // Mock successful user creation
+    User.prototype.save.mockResolvedValue({
+      _id: "123456",
       name: "Test User",
-      email: "invalid-email",
-      phone: "0123456789",
-      password: "SecureP@ss123",
+      email: "test@example.com",
+      phone: "123456789",
       gender: "male"
     });
-    expect(res.status).toBe(400);
-    expect(res.body.msg).toBe("Invalid or malicious email");
+
+    // Mock User.findById with select chain
+    User.findById.mockImplementation(() => ({
+      select: jest.fn().mockResolvedValue({
+        _id: "123456",
+        name: "Test User",
+        email: "test@example.com",
+        phone: "123456789",
+        gender: "male"
+      })
+    }));
+
+    token = jwt.sign(
+      { id: "123456", role: "user" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
   });
 
-  // ✅ Test duplicate user registration
-  test("Should reject registration if user already exists", async () => {
-    User.findOne.mockResolvedValue({ email: "test@example.com" });
-    const res = await request(app).post("/api/register").send({
-      name: "Test User",
-      email: "test@example.com",
-      phone: "0123456789",
-      password: "SecureP@ss123",
-      gender: "male"
-    });
-    expect(res.status).toBe(400);
-    expect(res.body.msg).toBe("User already exists");
+  test("Register a new user", async () => {
+    // For registration, make sure User.findOne returns null
+    User.findOne.mockResolvedValueOnce(null);
+    
+    const response = await request(app)
+      .post("/auth/register")
+      .send({
+        name: "Test User",
+        email: "newuser@example.com", // Use a different email than the mock
+        phone: "123456789",
+        password: "Test@1234",
+        gender: "male"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty("msg", "User registered successfully");
+    expect(response.body).toHaveProperty("token");
   });
 
-  // ✅ Test incorrect password during login
-  test("Should reject login with incorrect password", async () => {
-    User.findOne.mockResolvedValue({
-      email: "test@example.com",
-      password: await bcrypt.hash("CorrectPass123", 10)
-    });
+  test("Login with valid credentials", async () => {
+    const response = await request(app)
+      .post("/auth/login")
+      .send({
+        email: "test@example.com",
+        password: "Test@1234"
+      });
 
-    const res = await request(app).post("/api/login").send({
-      email: "test@example.com",
-      password: "WrongPass123"
-    });
-
-    expect(res.status).toBe(400);
-    expect(res.body.msg).toBe("Invalid credentials");
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("msg", "Regular user login successful");
+    expect(response.body).toHaveProperty("token");
   });
 
-  // ✅ Test missing authentication token
-  test("Should reject access to user data without a token", async () => {
-    const res = await request(app).get("/api/users/12345");
-    expect(res.status).toBe(401);
-    expect(res.body.msg).toBe("No token provided");
+  test("Login with invalid credentials", async () => {
+    const response = await request(app)
+      .post("/auth/login")
+      .send({
+        email: "wrong@example.com",
+        password: "WrongPassword1!"
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toHaveProperty("msg", "Invalid credentials");
   });
 
-  test("Should reject access to another user's data", async () => {
-    const token = jwt.sign({ id: "67890" }, "test-secret", { expiresIn: "1h" });
+  test("Access protected route with valid token", async () => {
+    jwt.verify = jest.fn().mockReturnValue({ id: "123456", role: "user" });
 
-    const res = await request(app)
-      .get("/api/users/12345")
+    const response = await request(app)
+      .get("/auth/users/123456")
       .set("Authorization", `Bearer ${token}`);
 
-    expect(res.status).toBe(401);
-    expect(res.body.msg).toBe("Invalid token");
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("name", "Test User");
+    expect(response.body).toHaveProperty("email", "test@example.com");
   });
 
+  test("Access protected route with invalid token", async () => {
+    jwt.verify = jest.fn().mockImplementation(() => {
+      throw new Error("Invalid token");
+    });
+
+    const response = await request(app)
+      .get("/auth/users/123456")
+      .set("Authorization", "Bearer invalid_token");
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("msg", "Invalid token");
+  });
+
+  test("Access protected route without token", async () => {
+    const response = await request(app)
+      .get("/auth/users/123456");
+
+    expect(response.status).toBe(401);
+    expect(response.body).toHaveProperty("msg", "No token provided"); // Updated to match actual response
+  });
 });

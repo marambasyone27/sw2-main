@@ -1,23 +1,20 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const path = require("path");
 const authRoutes = require("./auth");
 const { jwtMiddleware, authorize } = require('./middlewares/authMiddleware');
 
 dotenv.config();
+
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Static files
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
-
-// MongoDB Connection
-mongoose.connect(process.env.CONNECT_DB)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(`MongoDB Error: ${err}`));
 
 // Routes
 app.use("/api/auth", authRoutes);
