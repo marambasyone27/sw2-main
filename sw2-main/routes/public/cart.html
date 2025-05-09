@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Cart - Book Haven</title>
+  <link rel="stylesheet" href="cart.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>Your Cart</h2>
+    <div id="cart-items"></div>
+    <div class="cart-summary">
+      <div class="total">Total: $<span id="total-price">0.00</span></div>
+    </div>
+  </div>
+
+  <script>
+    function updateCartUI(cart) {
+      const cartItemsContainer = document.getElementById('cart-items');
+      let html = '';
+      let totalPrice = 0;
+
+      cart.items.forEach(item => {
+        html += `
+          <div class="cart-item">
+            <img src="${item.productImage}" alt="${item.productName}" />
+           <div class="cart-item-info">
+  <h3>${item.productName}</h3>
+  <span>Price: $${item.productPrice}</span><br>
+  <span>Quantity: ${item.quantity}</span>
+  <div class="item-price">Total: $${(item.productPrice * item.quantity).toFixed(2)}</div>
+</div>
+
+            <div class="cart-item-actions">
+              <button class="remove-btn" onclick="removeItem('${item.productId}')">Remove</button>
+            </div>
+          </div>`;
+        totalPrice += item.productPrice * item.quantity;
+      });
+
+      cartItemsContainer.innerHTML = html;
+      document.getElementById('total-price').innerText = totalPrice.toFixed(2);
+    }
+
+    function fetchCart() {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert("You need to be logged in to view your cart.");
+        return;
+      }
+
+      fetch(`/api/cart/${userId}`)
+        .then(res => res.json())
+        .then(data => {
+          updateCartUI(data.cart); // FIX: data.cart instead of data
+        })
+        .catch(err => console.error('Error fetching cart:', err));
+    }
+
+    function removeItem(productId) {
+      const userId = localStorage.getItem('userId');
+      fetch('/api/cart/remove', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, productId })
+      })
+        .then(res => res.json())
+        .then(data => {
+          alert('Item removed from cart!');
+          fetchCart();
+        })
+        .catch(err => console.error('Error removing item:', err));
+    }
+
+    window.onload = fetchCart;
+  </script>
+</body>
+</html>

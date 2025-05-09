@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Book Haven</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <div class="form-container">
+        <div class="logo">
+            <i class="fas fa-book-open"></i>
+        </div>
+        <h1>Welcome Back!</h1>
+
+        <form id="login-form">
+            <div class="input-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" name="email" placeholder="Email Address" required>
+            </div>
+            
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+            </div>
+            
+            <div class="remember-me">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">Remember me</label>
+            </div>
+            
+            <button type="submit" class="sub">Sign In</button>
+            
+            <div class="forgot-password">
+                <a href="forgot-password.html">Forgot Password?</a>
+            </div>
+        </form>
+
+        <center><div class="divider">OR</div></center> 
+
+        <div class="form-footer">
+            <p>Don't have an account? <a href="register.html">Join Now</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+    
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+    
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password }) 
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token && data.userId) {
+                    console.log('Login successful', data);
+                    
+                    // Store the token and user ID
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userId', data.userId);
+                    
+                    // Check the user's role to determine where to redirect
+                    if (data.role === 'admin') {
+                        window.location.href = '/main.html';  // Redirect to admin dashboard
+                    } else {
+                        window.location.href = '/home.html';  // Redirect to home page for regular users
+                    }
+                } else {
+                    alert('Invalid credentials or user not found');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error logging in');
+            });
+        });
+    </script>
+    
+</body>
+</html>

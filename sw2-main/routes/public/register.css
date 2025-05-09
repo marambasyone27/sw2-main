@@ -1,0 +1,242 @@
+/* ===== General Styles ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: overlay;
+}
+
+/* ===== Container Styles ===== */
+.container {
+    width: 100%;
+    max-width: 500px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #8e44ad, #3498db);
+}
+
+/* ===== Logo & Header Styles ===== */
+.logo {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.logo i {
+    font-size: 2.5rem;
+    color: #8e44ad;
+    margin-bottom: 10px;
+    transition: transform 0.3s ease;
+}
+
+.logo i:hover {
+    transform: rotate(-15deg);
+}
+
+h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 700;
+}
+
+/* ===== Form Styles ===== */
+form {
+    width: 100%;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+input {
+    font-size: 1rem;
+    width: 100%;
+    padding: 14px 15px 14px 45px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.3s ease;
+    background-color: #f9f9f9;
+}
+
+input:focus {
+    border-color: #8e44ad;
+    box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.2);
+    background-color: #fff;
+}
+
+.input-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+}
+
+/* ===== Button Styles ===== */
+.sub {
+    background: linear-gradient(90deg, #8e44ad, #3498db);
+    color: white;
+    border: none;
+    cursor: pointer;
+    padding: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    width: 100%;
+    margin-top: 10px;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+.sub:hover {
+    background: linear-gradient(90deg, #7d3c98, #2980b9);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Divider Styles ===== */
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 25px 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+}
+
+.divider::before {
+    margin-right: 15px;
+}
+
+.divider::after {
+    margin-left: 15px;
+}
+
+/* ===== Text & Link Styles ===== */
+.text-center {
+    text-align: center;
+}
+
+.text-center a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.text-center a:hover {
+    color: #2980b9;
+    text-decoration: underline;
+}
+
+.password-info {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin-top: -15px;
+    margin-bottom: 15px;
+}
+/* Styling for the gender icon */
+/* Styling for the gender icon */
+.gender-icon {
+    font-size: 20px; /* Adjust the icon size */
+    margin-right: 15px; /* Space between the icon and gender options */
+    vertical-align: middle; /* Align the icon with the radio buttons */
+}
+
+/* Container for the gender options */
+.gender-options {
+    display: flex;
+    align-items: center; /* Align the radio buttons with the labels */
+    gap: 15px; /* Adjust the spacing between Male and Female */
+}
+
+/* Style for the radio buttons */
+input[type="radio"] {
+    margin-right: 5px; /* Space between the radio button and label */
+    transform: scale(1.2); /* Slightly increase radio button size */
+}
+
+/* Optional: Styling for the labels */
+.gender-options label {
+    font-size: 16px; /* Adjust the text size of labels */
+    cursor: pointer;
+}
+
+
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Responsive Styles ===== */
+@media (max-width: 576px) {
+    .container {
+        padding: 30px 20px;
+    }
+
+    h1 {
+        font-size: 1.7rem;
+    }
+
+    input {
+        padding: 12px 15px 12px 40px;
+    }
+}
+
+@media (max-width: 400px) {
+    .container {
+        padding: 25px 15px;
+    }
+
+    .logo i {
+        font-size: 2rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+}
