@@ -9,10 +9,10 @@ require("dotenv").config();
 
 // Apply login rate limiting
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 5,
-  message: "Too many login attempts. Please try again later.",
-  statusCode: 429
+  statusCode: 429,
+  message: { message: "Too many login attempts. Please try again later." }
 });
 
 // Authorization middleware (for protected routes)
@@ -89,7 +89,6 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     // Admin login logic
     if (email === process.env.ADMIN_EMAIL) {
-      
       const token = jwt.sign({ id: user._id, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: "1h" });
       return res.json({
         msg: "Admin login successful",
@@ -108,7 +107,7 @@ router.post("/login", loginLimiter, async (req, res) => {
       role: 'user'
     });
   } catch (error) {
-    console.error("Login error: ", error);
+    //console.error("Login error: ", error);
     res.status(500).json({ msg: "Server error" });
   }
 });
@@ -143,6 +142,11 @@ router.get("/users/:id", jwtMiddleware, async (req, res) => {
     console.error("Error fetching user data: ", error);
     res.status(500).json({ msg: "Server error" });
   }
+});
+
+// Added protected route to test authorize middleware
+router.get("/protected/admin", jwtMiddleware, authorize(['admin']), (req, res) => {
+  res.json({ msg: "Welcome, admin!" });
 });
 
 module.exports = router;
