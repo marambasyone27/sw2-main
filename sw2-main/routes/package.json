@@ -32,6 +32,7 @@
     "mockingoose": "^2.16.2",
     "mongodb-memory-server": "^10.1.4",
     "multer": "^1.4.5-lts.2",
+    "node-mocks-http": "^1.17.2",
     "sinon": "^20.0.0",
     "supertest": "^7.1.0"
   }

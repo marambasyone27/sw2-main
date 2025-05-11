@@ -1,75 +1,82 @@
-const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const app = require('../app');  // تأكد من المسار الصحيح لتطبيقك
+const { jwtMiddleware, authorize } = require('../middlewares/authMiddleware');
 
-// تأكد من أنك قد قمت بتعريف هذه المتغيرات البيئية في .env
-process.env.JWT_SECRET = 'your-secret-key';  // تأكد من أنك تستخدم السر الخاص بك
+// Mock JWT library
+jest.mock('jsonwebtoken');
 
-describe('JWT Middleware and Authorization Tests', () => {
+// Mock token in environment
+process.env.JWT_SECRET = 'your-secret-key';
 
-  // اختبار jwtMiddleware
+describe('JWT Middleware and Authorization Unit Tests', () => {
+
   describe('JWT Middleware', () => {
 
-    it('should return 401 if no token is provided', async () => {
-      const res = await request(app)
-        .get('/api/protected')  // استبدل هذا بمسار محمي في تطبيقك
-        .send();
+    it('should call next() if token is valid', () => {
+      const req = {
+        headers: { authorization: 'Bearer valid_token' }  // Mock the headers
+      };
 
-      expect(res.status).toBe(401);
-      expect(res.body.msg).toBe("No token, authorization denied");
+      // Mock token validation
+      jwt.verify.mockReturnValue({ id: '123', role: 'user' });
+
+      const next = jest.fn();
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+      jwtMiddleware(req, res, next);
+      expect(next).toHaveBeenCalled();  // Ensure next() is called
     });
 
-    it('should return 401 if an invalid token is provided', async () => {
-      const res = await request(app)
-        .get('/api/protected')  // استبدل هذا بمسار محمي في تطبيقك
-        .set('Authorization', 'Bearer invalidtoken')
-        .send();
+    it('should send 401 if no token is provided', () => {
+      const req = { headers: { authorization: undefined } };  // No token
+      const next = jest.fn();
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
 
-      expect(res.status).toBe(401);
-      expect(res.body.msg).toBe("Token is not valid");
+      jwtMiddleware(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(401);  // Ensure 401 is returned
+      expect(res.json).toHaveBeenCalledWith({ msg: 'No token, authorization denied' });  // Ensure message is returned
     });
 
-    it('should allow access if a valid token is provided', async () => {
-      const payload = { id: '12345', role: 'user' };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    it('should send 401 if token is invalid', () => {
+      const req = {
+        headers: { authorization: 'Bearer invalid_token' }  // Mock the invalid token
+      };
 
-      const res = await request(app)
-        .get('/api/protected')  // استبدل هذا بمسار محمي في تطبيقك
-        .set('Authorization', `Bearer ${token}`)
-        .send();
+      // Mock invalid token verification
+      jwt.verify.mockImplementation(() => { throw new Error('Invalid token'); });
 
-      expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('msg', 'Access granted'); // تحقق من الرسالة المتوقعة من المسار المحمي
+      const next = jest.fn();
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+      jwtMiddleware(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(401);  // Ensure 401 is returned
+      expect(res.json).toHaveBeenCalledWith({ msg: 'Token is not valid' });  // Ensure message is returned
     });
+
   });
 
-  // اختبار authorize
   describe('Authorize Middleware', () => {
+    it('should return 403 if user does not have required role', () => {
+      const req = {
+        user: { role: 'user' }  // Mock user role
+      };
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      const next = jest.fn();
 
-    it('should return 403 if the user does not have the required role', async () => {
-      const payload = { id: '12345', role: 'user' };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-      const res = await request(app)
-        .get('/api/admin')  // استبدل هذا بمسار محمي يتطلب الدور "admin"
-        .set('Authorization', `Bearer ${token}`)
-        .send();
-
-      expect(res.status).toBe(403);
-      expect(res.body.msg).toBe('Forbidden');
+      authorize(['admin'])(req, res, next);
+      expect(res.status).toHaveBeenCalledWith(403);  // Ensure 403 is returned
+      expect(res.json).toHaveBeenCalledWith({ msg: 'Forbidden' });  // Ensure message is returned
     });
 
-    it('should allow access if the user has the required role', async () => {
-      const payload = { id: '12345', role: 'admin' };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    it('should call next() if user has required role', () => {
+      const req = {
+        user: { role: 'admin' }  // Mock user with required role
+      };
+      const res = {};
+      const next = jest.fn();
 
-      const res = await request(app)
-        .get('/api/admin')  // استبدل هذا بمسار محمي يتطلب الدور "admin"
-        .set('Authorization', `Bearer ${token}`)
-        .send();
-
-      expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('msg', 'Admin access granted'); // تحقق من الرسالة المتوقعة من المسار المحمي
+      authorize(['admin'])(req, res, next);
+      expect(next).toHaveBeenCalled();  // Ensure next() is called
     });
   });
+
 });

@@ -4,11 +4,11 @@ const Admin = require('../models/Admin');
 
 jest.mock('bcrypt');
 
-describe('Admin Model', () => {
+describe('Admin Model - Unit Test Only', () => {
   beforeAll(async () => {
     await mongoose.connect('mongodb://127.0.0.1:27017/testdb', {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
     });
   });
 
@@ -24,30 +24,48 @@ describe('Admin Model', () => {
 
   it('should hash the password before saving', async () => {
     const plainPassword = 'admin123';
-    bcrypt.hash.mockResolvedValue('hashedPassword');
+    const mockHashedPassword = 'hashedPassword';
+    
+    // محاكاة bcrypt.hash
+    bcrypt.hash.mockResolvedValue(mockHashedPassword);
 
     const admin = new Admin({ username: 'admin', password: plainPassword });
-    await admin.save();
+    await admin.save(); // حفظ النموذج
 
+    // التحقق من أنه تم استخدام bcrypt.hash بشكل صحيح
     expect(bcrypt.hash).toHaveBeenCalledWith(plainPassword, expect.any(Number));
 
-    expect(admin.password).toBe('hashedPassword');
+    // التحقق من أن كلمة المرور تم تعيينها إلى القيمة المشفرة
+    expect(admin.password).toBe(mockHashedPassword);
   });
 
   it('should not rehash the password if it is not modified', async () => {
-    bcrypt.hash.mockResolvedValue('hashedPassword');
+    const mockHashedPassword = 'hashedPassword';
 
-    const admin = new Admin({ username: 'admin2', password: 'admin456' });
+    // محاكاة bcrypt.hash
+    bcrypt.hash.mockResolvedValue(mockHashedPassword);
+
+    // محاكاة نموذج `Admin`
+    const admin = new Admin({ username: 'admin', password: 'admin123' });
+
+    // محاكاة حفظ أول مرة
     await admin.save();
+    const originalHashedPassword = admin.password;
 
-    const originalHashed = admin.password;
+    // تحديث فقط اسم المستخدم (دون تغيير كلمة المرور)
     admin.username = 'newAdmin';
+
+    // حفظ مرة أخرى (يجب ألا تتم إعادة تشفير كلمة المرور)
     await admin.save();
-    expect(admin.password).toBe(originalHashed);
-    expect(bcrypt.hash).toHaveBeenCalledTimes(1);
+
+    // التحقق من أن كلمة المرور لم تتغير
+    expect(admin.password).toBe(originalHashedPassword);
+
+    // التأكد من أن `bcrypt.hash` تم استدعاؤه مرة واحدة فقط (لأن كلمة المرور لم تتغير)
+    expect(bcrypt.hash).toHaveBeenCalledTimes(1); 
   });
 
-  it('should compare the password correctly', async () => {
+  it('should compare passwords correctly', async () => {
     const plainPassword = 'admin123';
     const hashedPassword = 'hashedPassword';
     bcrypt.compare.mockResolvedValue(true);

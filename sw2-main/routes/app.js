@@ -1,7 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const path = require("path");
-const authRoutes = require("./auth");
+const authRoutes = require("./auth");  // استيراد authRoutes
 const { jwtMiddleware, authorize } = require('./middlewares/authMiddleware');
 
 dotenv.config();
@@ -17,7 +17,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // Routes
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);  // تأكد من أن authRoutes تعيد Router()
 app.use("/api/cart", require("./cartRoute"));
 app.use("/api/products", require("./product"));
 
